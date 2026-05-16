@@ -1,8 +1,17 @@
-# GitHub issue drafts
+# GitHub issues
 
 These issues are designed as small vertical slices. Each issue should produce something demoable or verifiable, not just a hidden code change.
 
-> Status: drafted locally. They can be created as real GitHub issues after the local repo is connected to a GitHub repository.
+> Status: created on GitHub for <https://github.com/majorgilles/sms-malicious-classifier>.
+
+## Created issue links
+
+- [#1 Complete reproducible uv + Jupyter project setup](https://github.com/majorgilles/sms-malicious-classifier/issues/1)
+- [#2 Build the data exploration notebook and label mapping](https://github.com/majorgilles/sms-malicious-classifier/issues/2)
+- [#3 Fine-tune DistilBERT on the SMS dataset](https://github.com/majorgilles/sms-malicious-classifier/issues/3)
+- [#4 Evaluate the model with safety-aware metrics](https://github.com/majorgilles/sms-malicious-classifier/issues/4)
+- [#5 Implement the one-message prediction CLI](https://github.com/majorgilles/sms-malicious-classifier/issues/5)
+- [#6 Polish the portfolio README and final demo narrative](https://github.com/majorgilles/sms-malicious-classifier/issues/6)
 
 ## Issue 1: Complete reproducible uv + Jupyter project setup
 
