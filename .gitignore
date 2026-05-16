@@ -19,7 +19,6 @@ wheels/
 # Keep folder placeholders, but avoid committing large generated files by default.
 data/raw/*
 !data/raw/.gitkeep
-data/processed/*
 !data/processed/.gitkeep
 models/*
 !models/.gitkeep
