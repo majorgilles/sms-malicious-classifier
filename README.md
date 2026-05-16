@@ -138,6 +138,24 @@ uv run python -c "import torch; print(torch.cuda.is_available()); print(torch.cu
 
 If this prints `False`, the project can still be developed, but DistilBERT training will be slower until CUDA/PyTorch is fixed.
 
+## Code quality
+
+Ruff is configured as the project formatter and linter.
+
+```bash
+# Check for lint issues
+uv run ruff check .
+
+# Auto-fix lint issues when possible
+uv run ruff check --fix .
+
+# Format Python code
+uv run ruff format .
+
+# Verify formatting without changing files
+uv run ruff format --check .
+```
+
 ## Notebook plan
 
 ### `notebooks/01_data_exploration.ipynb`
