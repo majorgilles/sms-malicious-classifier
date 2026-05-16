@@ -49,7 +49,6 @@ def split_sms_dataset(
     This is the correct proportion to get 12.5% of the overall remaining train_df., 
     which is 10% over the beginning pool we started up with.
     """
-
     relative_validation_size = validation_size / (1 - test_size)
 
     train_df, validation_df = train_test_split(
