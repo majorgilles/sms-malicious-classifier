@@ -33,22 +33,18 @@ def split_sms_dataset(
         stratify=df["label"],
     )
 
-    """This is the trickiest line.
-    We want final sizes:
-
-    - test = 20% of full data
-    - validation = 10% of full data
-    - train = 70% of full data
-    
-    But after removing test, only 80% of the original data remains. 
-    
-    So validation must be:
-    ```python
-    0.1 / 0.8 = 0.125
-    ```
-    This is the correct proportion to get 12.5% of the overall remaining train_df., 
-    which is 10% over the beginning pool we started up with.
-    """
+    # This is the trickiest line.
+    # We want final sizes:
+    # - test = 20% of full data
+    # - validation = 10% of full data
+    # - train = 70% of full data
+    # But after removing test, only 80% of the original data remains.
+    # So validation must be:
+    # ```python
+    # 0.1 / 0.8 = 0.125
+    # ```
+    # This is the correct proportion to get 12.5% of the overall remaining train_df.,
+    # which is 10% over the beginning pool we started up with.
     relative_validation_size = validation_size / (1 - test_size)
 
     train_df, validation_df = train_test_split(
