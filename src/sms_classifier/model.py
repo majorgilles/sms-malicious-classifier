@@ -2,8 +2,11 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     PreTrainedModel,
-    PreTrainedTokenizerBase, BatchEncoding,
+    PreTrainedTokenizerBase,
+    BatchEncoding,
 )
+import pandas as pd
+from datasets import Dataset
 
 from sms_classifier.labels import ID_TO_LABEL, LABEL_TO_ID
 
@@ -38,3 +41,8 @@ def tokenize_messages(
         max_length=MAX_LENGTH,
     )
 
+
+def dataframe_to_dataset(df: pd.DataFrame) -> Dataset:
+    encoded_df = df.copy()
+    encoded_df["labels"] = encoded_df["label"].map(LABEL_TO_ID)
+    return Dataset.from_pandas(encoded_df, preserve_index=False)
