@@ -1,28 +1,28 @@
-from datasets import load_dataset
 import pandas as pd
+from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 
 DATASET_NAME = "ucirvine/sms_spam"
-LABEL_MAP = {
-    0: "benign",
-    1: "malicious"
-}
+LABEL_MAP = {0: "benign", 1: "malicious"}
+
 
 def load_sms_dataset() -> pd.DataFrame:
     dataset = load_dataset(DATASET_NAME, split="train")
 
     df = dataset.to_pandas()
     df = df.rename(columns={"sms": "message"})
-    df["label"] = df["label"].map(LABEL_MAP) # Takes numeric labels and replaces them using LABEL_MAP
+    df["label"] = df["label"].map(
+        LABEL_MAP
+    )  # Takes numeric labels and replaces them using LABEL_MAP
 
-    return df[["message", "label"]] # Returns only those two columns, in that order
+    return df[["message", "label"]]  # Returns only those two columns, in that order
 
 
 def split_sms_dataset(
-        df: pd.DataFrame,
-        test_size: float = 0.2,
-        validation_size: float = 0.1,
-        random_state: int = 42,
+    df: pd.DataFrame,
+    test_size: float = 0.2,
+    validation_size: float = 0.1,
+    random_state: int = 42,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     train_df, test_df = train_test_split(
         df,
@@ -31,7 +31,6 @@ def split_sms_dataset(
         stratify=df["label"],
     )
 
-
     """This is the trickiest line.
     We want final sizes:
 
@@ -39,12 +38,14 @@ def split_sms_dataset(
     - validation = 10% of full data
     - train = 70% of full data
     
-    But after removing test, only 80% of the original data remains. So validation must be:
+    But after removing test, only 80% of the original data remains. 
+    
+    So validation must be:
     ```python
     0.1 / 0.8 = 0.125
     ```
-    This is the correct proportion to get 12.5% of the overall remaining train_df., which is 10% over
-    the beginning pool we started up with.
+    This is the correct proportion to get 12.5% of the overall remaining train_df., 
+    which is 10% over the beginning pool we started up with.
     """
 
     relative_validation_size = validation_size / (1 - test_size)
@@ -55,9 +56,10 @@ def split_sms_dataset(
         random_state=random_state,
         stratify=train_df["label"],
     )
-
+    # Without reset_index, the split DataFrames keep their original row numbers,
+    # like 104, 982, 7, etc. # With reset, each split starts at 0, 1, 2....
     return (
-        train_df.reset_index(drop=True), # Without reset_index, the split DataFrames keep their original row numbers, like 104, 982, 7, etc. With reset, each split starts at 0, 1, 2....
+        train_df.reset_index(drop=True),
         validation_df.reset_index(drop=True),
-        test_df.reset_index(drop=True)
+        test_df.reset_index(drop=True),
     )
