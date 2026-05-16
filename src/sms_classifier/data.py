@@ -1,6 +1,7 @@
 import pandas as pd
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
+from pathlib import Path
 
 DATASET_NAME = "ucirvine/sms_spam"
 LABEL_MAP = {0: "benign", 1: "malicious"}
@@ -63,3 +64,19 @@ def split_sms_dataset(
         validation_df.reset_index(drop=True),
         test_df.reset_index(drop=True),
     )
+
+def save_splits(
+        train_df: pd.DataFrame,
+        validation_df: pd.DataFrame,
+        test_df: pd.DataFrame,
+        output_dir: str | Path = "data/processed",
+) -> None:
+    output_path = Path(output_dir)
+    # exist_ok=True: don’t crash if data/processed/ already exists
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    # index=False means: don’t save pandas’ row numbers as an extra CSV column
+    train_df.to_csv(output_path/"train.csv", index=False)
+    validation_df.to_csv(output_path/"validation.csv", index=False)
+    test_df.to_csv(output_path/"test.csv", index=False)
+
