@@ -1,12 +1,12 @@
+import pandas as pd
+from datasets import Dataset
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
+    BatchEncoding,
     PreTrainedModel,
     PreTrainedTokenizerBase,
-    BatchEncoding,
 )
-import pandas as pd
-from datasets import Dataset
 
 from sms_classifier.labels import ID_TO_LABEL, LABEL_TO_ID
 
