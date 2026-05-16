@@ -2,7 +2,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     PreTrainedModel,
-    PreTrainedTokenizerBase,
+    PreTrainedTokenizerBase, BatchEncoding,
 )
 
 from sms_classifier.labels import ID_TO_LABEL, LABEL_TO_ID
@@ -27,3 +27,14 @@ def load_sequence_classifier() -> PreTrainedModel:
         id2label=ID_TO_LABEL,
         label2id=LABEL_TO_ID,
     )
+
+
+def tokenize_messages(
+    examples: dict[str, list[str]], tokenizer: PreTrainedTokenizerBase
+) -> BatchEncoding:
+    return tokenizer(
+        examples["message"],
+        truncation=True,
+        max_length=MAX_LENGTH,
+    )
+
