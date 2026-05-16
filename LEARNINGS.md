@@ -355,3 +355,24 @@ The project also uses a `.venv` created by `uv`. PyCharm should use:
 as the interpreter, while `.venv/` itself should be marked as Excluded in the
 project tree. This lets PyCharm index installed packages correctly for import
 suggestions without treating the virtual environment as project source code.
+
+## Issue 4: Safety-aware evaluation
+
+- Use the held-out test set for final evaluation because validation data can
+  influence model selection.
+- Load the saved model/tokenizer for evaluation; do not retrain in the eval
+  notebook.
+- Reuse shared label mappings so `benign = 0` and `malicious = 1` stay
+  consistent.
+- `Trainer.predict()` is useful for evaluation too: it handles batching,
+  padding, device placement, and output collection.
+- `TrainingArguments` is the `Trainer` runtime config even outside training.
+- Accuracy is not enough for this task. Malicious recall and false negatives are
+  the safety-critical signals.
+- The confusion matrix makes error counts concrete, especially malicious
+  messages predicted as benign.
+- Saved metrics and plots may still be ignored by `.gitignore` unless tracking
+  is intentionally enabled.
+- Treat the SMS spam dataset as a proxy, not proof of production readiness.
+- Before finalizing notebooks, remove duplicate/debug cells and rerun from a
+  clean kernel.
