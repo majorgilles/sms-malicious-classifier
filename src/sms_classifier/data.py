@@ -4,8 +4,9 @@ import pandas as pd
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 
+from sms_classifier.labels import ID_TO_LABEL
+
 DATASET_NAME = "ucirvine/sms_spam"
-LABEL_MAP = {0: "benign", 1: "malicious"}
 
 
 def load_sms_dataset() -> pd.DataFrame:
@@ -14,7 +15,7 @@ def load_sms_dataset() -> pd.DataFrame:
     df = dataset.to_pandas()
     df = df.rename(columns={"sms": "message"})
     df["label"] = df["label"].map(
-        LABEL_MAP
+        ID_TO_LABEL
     )  # Takes numeric labels and replaces them using LABEL_MAP
 
     return df[["message", "label"]]  # Returns only those two columns, in that order
