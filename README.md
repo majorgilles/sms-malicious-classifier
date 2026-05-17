@@ -1,99 +1,149 @@
 # SMS Malicious Message Classifier
 
-A 2–3 day NLP project that classifies SMS messages as **malicious** or **benign** using a small BERT-style model: **DistilBERT**.
+A small NLP portfolio project that classifies SMS messages as **malicious** or
+**benign** with a fine-tuned DistilBERT model.
 
-The goal is to build a portfolio-ready `uv` Python project with Jupyter notebooks, a trained model, evaluation results, and a command-line script that can classify one new SMS message.
+The project demonstrates an end-to-end machine-learning workflow:
 
-> **Important limitation:** the first version will use a public SMS spam/ham dataset as a practical proxy for malicious SMS detection. That means it is useful for learning and demonstration, but it is not a complete real-world security detector.
+1. explore and split a public SMS dataset,
+2. fine-tune `distilbert-base-uncased`,
+3. evaluate the saved model with safety-aware metrics, and
+4. run one-message predictions from the command line.
 
-## Project goals
+> **Important limitation:** this first version uses the public UCI SMS
+> Spam Collection as a practical proxy for malicious SMS detection. In plain
+> language, the model has mostly learned the difference between older
+> **spam/ham** examples, not the full range of modern smishing, phishing,
+> bank-fraud, delivery-scam, or account-takeover messages. Treat it as a
+> learning project and demo, not as a production security detector.
 
-- Use `uv` for Python project and dependency management.
-- Use Jupyter notebooks for exploration, training, evaluation, and demo.
-- Fine-tune DistilBERT to classify SMS messages as:
-  - `malicious`: spam, scam-like, phishing-like, or suspicious messages
-  - `benign`: normal messages
-- Evaluate with safety-aware metrics:
-  - accuracy
-  - precision
-  - recall
-  - F1
-  - confusion matrix
-- Pay special attention to **malicious-message recall**: how many truly bad messages the model catches.
-- Save the trained model and tokenizer.
-- Provide a CLI script for one-message prediction.
+## Results summary
 
-Example final usage:
+The latest evaluation is saved in [`reports/metrics.json`](reports/metrics.json)
+and was produced by `notebooks/03_evaluate_and_demo.ipynb` on the held-out test
+split.
+
+| Metric | Value |
+| --- | ---: |
+| Accuracy | 98.92% |
+| Malicious precision | 97.24% |
+| Malicious recall | 94.63% |
+| Malicious F1 | 95.92% |
+
+Confusion matrix on 1,115 test messages:
+
+| True label | Predicted benign | Predicted malicious |
+| --- | ---: | ---: |
+| benign | 962 | 4 |
+| malicious | 8 | 141 |
+
+The most important portfolio takeaway is malicious-message recall: the model
+caught 141 of 149 spam-like malicious messages in the test split, while missing
+8. Because the dataset is only a proxy, these numbers should not be interpreted
+as real-world smishing detection performance.
+
+## Quick start
+
+### 1. Clone and install
 
 ```bash
-uv run python scripts/predict.py "URGENT: Your account is locked. Click here to verify."
+git clone https://github.com/majorgilles/sms-malicious-classifier.git
+cd sms-malicious-classifier
+uv sync
 ```
 
-Expected final output style:
+### 2. Register the Jupyter kernel
+
+```bash
+uv run python -m ipykernel install --user --name sms-malicious-classifier --display-name "SMS Malicious Classifier"
+```
+
+### 3. Launch notebooks
+
+```bash
+uv run jupyter lab
+```
+
+Run the notebooks in order:
+
+1. [`notebooks/01_data_exploration.ipynb`](notebooks/01_data_exploration.ipynb)
+   - loads the SMS spam/ham data,
+   - maps `ham` to `benign` and `spam` to `malicious`,
+   - inspects class balance and examples,
+   - saves train/validation/test CSV files under `data/processed/`.
+2. [`notebooks/02_train_distilbert.ipynb`](notebooks/02_train_distilbert.ipynb)
+   - tokenizes messages with the DistilBERT tokenizer,
+   - fine-tunes `distilbert-base-uncased`,
+   - saves the model and tokenizer to `models/distilbert-sms/`.
+3. [`notebooks/03_evaluate_and_demo.ipynb`](notebooks/03_evaluate_and_demo.ipynb)
+   - loads the saved model,
+   - evaluates the held-out test split,
+   - saves metrics to `reports/metrics.json`,
+   - saves the confusion-matrix figure to `reports/figures/`,
+   - includes example predictions and limitations.
+
+### 4. Optional: verify GPU support
+
+Training can run on CPU, but it is much faster with CUDA.
+
+```bash
+uv run python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU only')"
+```
+
+## CLI demo
+
+After running the training notebook, classify one SMS message with:
+
+```bash
+uv run python scripts/predict.py "Hey, are we still meeting at 6?"
+```
+
+Sample output:
+
+```text
+label: benign
+confidence: 99.75%
+```
+
+Another example using a spam-style message from the project dataset:
+
+```bash
+uv run python scripts/predict.py "WIN: We have a winner! Mr. T. Foley won an iPod! More exciting prizes soon, so keep an eye on ur mobile or visit www.win-82050.co.uk"
+```
+
+Sample output:
 
 ```text
 label: malicious
-confidence: 0.94
+confidence: 98.58%
 ```
 
-## Plain-English glossary
+The script loads `models/distilbert-sms/`, tokenizes the message, runs the
+classifier, and prints the predicted label plus confidence.
 
-- **NLP**: Natural Language Processing; teaching computers to work with text.
-- **Dataset**: a list of example SMS messages used to train and test the model.
-- **Label**: the answer attached to a message, such as `malicious` or `benign`.
-- **Spam**: unwanted or junk messages.
-- **Ham**: normal, non-spam messages. In this project, ham maps to `benign`.
-- **Smishing**: phishing through SMS, often trying to steal money, passwords, or personal information.
-- **Proxy**: an imperfect substitute. Here, spam is used as a first approximation of malicious SMS.
-- **Model**: the trained program that learns patterns from examples and predicts labels for new messages.
-- **DistilBERT**: a smaller, faster version of BERT, a modern language model.
-- **Fine-tuning**: taking a pre-trained model and training it a little more on this SMS classification task.
-- **GPU**: hardware that can train deep learning models faster than a CPU.
-- **CUDA**: NVIDIA software support that lets PyTorch use the GPU.
-- **Recall**: of the truly malicious messages, how many the model catches.
-- **Precision**: when the model says `malicious`, how often it is correct.
-- **F1**: one score that balances precision and recall.
-- **Confusion matrix**: a small table showing correct predictions and mistake types.
-
-## Learning references
-
-These are included to guide the learning path while building the project:
-
-1. **Jay Alammar — The Illustrated BERT, ELMo, and co.**  
-   A well-known visual blog post explaining BERT-style language models in approachable terms.  
-   <https://jalammar.github.io/illustrated-bert/>
-
-2. **Jay Alammar — The Illustrated Transformer**  
-   A visual explanation of the transformer architecture behind BERT and DistilBERT.  
-   <https://jalammar.github.io/illustrated-transformer/>
-
-3. **Hugging Face NLP Course — Fine-tuning a pretrained model**  
-   Practical guide to using transformer models for text classification.  
-   <https://huggingface.co/learn/nlp-course/chapter3/1>
-
-4. **UCI SMS Spam Collection Dataset**  
-   A classic public SMS spam/ham dataset suitable for a first version of this project.  
-   <https://archive.ics.uci.edu/dataset/228/sms+spam+collection>
-
-## Planned repository structure
+## Repository structure
 
 ```text
 sms-malicious-classifier/
   README.md
   pyproject.toml
   uv.lock
-  .gitignore
+  AGENTS.md
+  LEARNINGS.md
   data/
     raw/
     processed/
+      train.csv
+      validation.csv
+      test.csv
   notebooks/
     01_data_exploration.ipynb
     02_train_distilbert.ipynb
     03_evaluate_and_demo.ipynb
   src/
     sms_classifier/
-      __init__.py
       data.py
+      labels.py
       model.py
       predict.py
   scripts/
@@ -102,170 +152,50 @@ sms-malicious-classifier/
     distilbert-sms/
   reports/
     figures/
+      confusion_matrix.png
     metrics.json
-  docs/
-    github-issues.md
 ```
 
-## Setup
+Large generated artifacts, including trained model weights, are ignored by git
+by default. If `models/distilbert-sms/` is missing, run the training notebook
+before using the CLI.
 
-### 1. Clone the repository
+## Label mapping
 
-```bash
-git clone <your-repo-url>
-cd sms-malicious-classifier
+The project uses one shared mapping in
+[`src/sms_classifier/labels.py`](src/sms_classifier/labels.py):
+
+```python
+LABEL_TO_ID = {
+    "benign": 0,
+    "malicious": 1,
+}
 ```
 
-### 2. Create the environment with uv
-
-```bash
-uv sync
-```
-
-### 3. Register the Jupyter kernel
-
-```bash
-uv run python -m ipykernel install --user --name sms-malicious-classifier --display-name "SMS Malicious Classifier"
-```
-
-### 4. Verify GPU support
-
-Because this project targets a local NVIDIA RTX 4070 SUPER, verify that PyTorch can see CUDA:
-
-```bash
-uv run python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU only')"
-```
-
-If this prints `False`, the project can still be developed, but DistilBERT training will be slower until CUDA/PyTorch is fixed.
+The same mapping is used for data preparation, training, evaluation, and CLI
+prediction.
 
 ## Code quality
 
-Ruff is configured as the project formatter and linter.
+Ruff is configured as the formatter and linter.
 
 ```bash
-# Check for lint issues
 uv run ruff check .
-
-# Auto-fix lint issues when possible
-uv run ruff check --fix .
-
-# Format Python code
-uv run ruff format .
-
-# Verify formatting without changing files
 uv run ruff format --check .
 ```
 
-## Notebook plan
+## Learning references
 
-### `notebooks/01_data_exploration.ipynb`
+- [Jay Alammar — The Illustrated BERT, ELMo, and co.](https://jalammar.github.io/illustrated-bert/)
+- [Jay Alammar — The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)
+- [Hugging Face NLP Course — Fine-tuning a pretrained model](https://huggingface.co/learn/nlp-course/chapter3/1)
+- [UCI SMS Spam Collection Dataset](https://archive.ics.uci.edu/dataset/228/sms+spam+collection)
 
-Purpose: understand the dataset before modeling.
+## Future work
 
-Main tasks:
-
-- Load the SMS spam/ham dataset.
-- Rename labels:
-  - `spam` -> `malicious`
-  - `ham` -> `benign`
-- Check class balance: how many malicious vs benign messages exist.
-- Inspect example messages.
-- Split data into train/validation/test sets.
-- Save processed data under `data/processed/`.
-
-### `notebooks/02_train_distilbert.ipynb`
-
-Purpose: fine-tune DistilBERT.
-
-Main tasks:
-
-- Load processed SMS data.
-- Load DistilBERT tokenizer and model from Hugging Face.
-- Tokenize SMS messages.
-- Train/fine-tune the model.
-- Save the trained model and tokenizer to `models/distilbert-sms/`.
-
-### `notebooks/03_evaluate_and_demo.ipynb`
-
-Purpose: evaluate and demonstrate the trained model.
-
-Main tasks:
-
-- Load the saved model.
-- Evaluate on the test set.
-- Report accuracy, precision, recall, F1, and confusion matrix.
-- Save metrics to `reports/metrics.json`.
-- Show example predictions.
-- Explain limitations and next steps.
-
-## CLI prediction plan
-
-The final script should classify one message at a time:
-
-```bash
-uv run python scripts/predict.py "Free prize! Claim now at this link"
-```
-
-Possible output:
-
-```text
-label: malicious
-confidence: 0.91
-```
-
-Example commands:
-
-```bash
-uv run python scripts/predict.py "Hey, are we still meeting at 6?"
-uv run python scripts/predict.py "URGENT: Your account is locked. Click here to verify."
-uv run python scripts/predict.py "Congratulations! You won a free prize. Claim now."
-```
-
-The script should:
-
-1. Load `models/distilbert-sms/`.
-2. Tokenize the input SMS.
-3. Run the model.
-4. Convert model output into a label and confidence score.
-5. Print the result clearly.
-
-## 2–3 day build plan
-
-### Day 1: Project setup and data
-
-- Finalize `uv` project setup.
-- Add notebook dependencies.
-- Download/load the SMS dataset.
-- Explore examples and class balance.
-- Create train/validation/test splits.
-- Write clear notes explaining dataset limitations.
-
-### Day 2: Train DistilBERT
-
-- Verify local GPU/CUDA support.
-- Fine-tune DistilBERT.
-- Save the model and tokenizer.
-- Track basic training results.
-
-### Day 3: Evaluate, demo, and polish
-
-- Evaluate using safety-aware metrics.
-- Create confusion matrix visualization.
-- Implement `scripts/predict.py`.
-- Add example predictions.
-- Polish README and notebooks for portfolio use.
-
-## Risks and scope control
-
-- DistilBERT setup can be fragile because PyTorch, CUDA, and Hugging Face dependencies must work together.
-- The dataset is a first-version proxy, not a complete malicious-SMS security dataset.
-- Do not add deployment or a web app until the notebooks, saved model, metrics, and CLI work.
-- If training becomes slow, reduce epochs, batch size, or max sequence length before expanding scope.
-
-## Future improvements
-
-- Add a true smishing/phishing SMS dataset.
-- Compare DistilBERT against a simple TF-IDF + Logistic Regression baseline.
-- Add batch CSV prediction.
-- Add tests for data loading and CLI prediction.
-- Package the model for a small local web demo.
+- Add a true smishing/phishing SMS dataset and compare results against this
+  spam/ham proxy baseline.
+- Add batch prediction for CSV files.
+- Compare DistilBERT with a simple TF-IDF + Logistic Regression baseline.
+- Add lightweight tests for data loading, label mapping, and CLI prediction.
+- Package a small local demo after the notebook and CLI workflow are stable.
