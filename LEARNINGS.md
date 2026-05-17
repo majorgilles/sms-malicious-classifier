@@ -376,3 +376,193 @@ suggestions without treating the virtual environment as project source code.
 - Treat the SMS spam dataset as a proxy, not proof of production readiness.
 - Before finalizing notebooks, remove duplicate/debug cells and rerun from a
   clean kernel.
+
+## Issue 5: One-message prediction CLI
+
+Issue #5 adds a command-line script for classifying one SMS message:
+
+```bash
+uv run python scripts/predict.py "message text"
+```
+
+The intended output is a readable label and confidence score:
+
+```text
+label: malicious
+confidence: 98.58%
+```
+
+## CLI wrapper vs reusable prediction logic
+
+The project separates command-line code from reusable prediction code.
+
+`src/sms_classifier/predict.py` owns the reusable model logic:
+
+- validate the message
+- load the saved tokenizer and model
+- tokenize the text
+- run inference
+- convert model outputs into a label and confidence
+
+`scripts/predict.py` owns the command-line interface:
+
+- read the message from the terminal
+- call `predict_message(args.message)`
+- print the label and confidence
+- show a helpful error for empty input
+
+This keeps the prediction function usable from notebooks, tests, or future apps
+without copying command-line parsing everywhere.
+
+
+## Prediction flow
+
+The prediction function loads the saved artifacts from:
+
+```text
+models/distilbert-sms/
+```
+
+The main inference steps are:
+
+1. Strip and validate the message.
+2. Load the tokenizer with `AutoTokenizer.from_pretrained(model_dir)`.
+3. Load the classifier with `AutoModelForSequenceClassification.from_pretrained(model_dir)`.
+4. Call `model.eval()` to disable training behavior such as dropout.
+5. Tokenize the SMS into PyTorch tensors.
+6. Use `torch.no_grad()` because prediction does not need backpropagation.
+7. Convert logits into probabilities with softmax.
+8. Pick the highest-probability label.
+9. Map the numeric label ID back to `benign` or `malicious`.
+
+## Logits, softmax, and `dim=-1`
+
+The model returns raw class scores called logits.
+
+For one message and two labels, the shape is usually:
+
+```text
+[1, 2]
+```
+
+Meaning:
+
+```text
+1 = batch size, one message
+2 = class scores, one for benign and one for malicious
+```
+
+`dim=-1` means "operate across the last dimension."
+
+For this project, the last dimension is the label/class dimension:
+
+```python
+probabilities = torch.softmax(outputs.logits, dim=-1)
+confidence, predicted_id = torch.max(probabilities, dim=-1)
+```
+
+So PyTorch converts each message's two class scores into probabilities, then
+selects the highest-probability class.
+
+For shape:
+
+```text
+[3, 2]
+```
+
+`3` means three messages in a batch, and `2` means two class scores per message.
+
+## Important model behavior discovered
+
+The CLI and saved model work correctly on dataset-style spam examples.
+
+Known malicious-style examples from the processed test data predicted
+`malicious` with high confidence:
+
+```text
+WIN: We have a winner! Mr. T. Foley won an iPod! ...
+label: malicious
+confidence: 98.58%
+
+IMPORTANT MESSAGE. This is a final contact attempt. ...
+label: malicious
+confidence: 99.03%
+
+HOT LIVE FANTASIES call now 08707509020 ...
+label: malicious
+confidence: 99.16%
+```
+
+However, this short synthetic scam-like message was predicted as benign:
+
+```bash
+uv run python scripts/predict.py "Congratulations! You won a free prize. Claim now."
+```
+
+Observed output:
+
+```text
+label: benign
+confidence: 98.81%
+```
+
+When classic spam signals were added, the prediction flipped:
+
+```bash
+uv run python scripts/predict.py "URGENT! You won a FREE prize. Claim now at www.prize-claim.com or call 08712345678 NOW!"
+```
+
+Observed output:
+
+```text
+label: malicious
+confidence: 98.98%
+```
+
+## Interpretation: dataset limitation, not CLI failure
+
+This suggests the CLI and model-loading code are working, but the model has a
+generalization limitation.
+
+The first version is trained on an SMS spam/ham proxy dataset. It appears to
+learn strong surface clues such as:
+
+- URLs
+- phone numbers
+- all-caps urgency
+- words like `WIN`, `URGENT`, and `NOW`
+- prices
+- opt-out language such as `STOP`
+
+The model may miss short or modern phishing-style messages that do not include
+those dataset-style spam clues.
+
+This is an example of shortcut learning: the model relies on easy patterns that
+worked in the training data instead of deeply understanding scam intent.
+
+## Portfolio framing
+
+This is not a reason to hide the result. It is an important limitation to explain
+clearly.
+
+A good project description should say:
+
+```text
+This first version detects many classic SMS spam patterns, but it is trained on a
+spam/ham proxy dataset and can miss short phishing-like messages without obvious
+spam indicators.
+```
+
+For a safety-related classifier, false negatives matter. A false negative is a
+malicious message predicted as benign.
+
+## Future improvement ideas
+
+Possible future work:
+
+- add a true smishing/phishing SMS dataset
+- add more short scam-like examples to training
+- evaluate false negatives manually
+- compare against a simple baseline model
+- test threshold tuning if malicious recall needs to be prioritized
+- document examples the model misses, not only examples it catches
