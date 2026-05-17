@@ -213,6 +213,14 @@ label: malicious
 confidence: 0.91
 ```
 
+Example commands:
+
+```bash
+uv run python scripts/predict.py "Hey, are we still meeting at 6?"
+uv run python scripts/predict.py "URGENT: Your account is locked. Click here to verify."
+uv run python scripts/predict.py "Congratulations! You won a free prize. Claim now."
+```
+
 The script should:
 
 1. Load `models/distilbert-sms/`.

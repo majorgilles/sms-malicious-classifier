@@ -1,12 +1,10 @@
-"""Predict whether one SMS message is malicious or benign.
-
-This is a placeholder for the final CLI. Issue #5 will replace this with code
-that loads the saved DistilBERT model from models/distilbert-sms/.
-"""
+"""Classify one SMS message from the command line."""
 
 from __future__ import annotations
 
 import argparse
+
+from sms_classifier.predict import predict_message
 
 
 def main() -> None:
@@ -14,11 +12,13 @@ def main() -> None:
     parser.add_argument("message", help="SMS message text to classify")
     args = parser.parse_args()
 
-    raise SystemExit(
-        "Prediction is not implemented yet. "
-        "Train and save the DistilBERT model first, then update scripts/predict.py.\n"
-        f"Received message: {args.message!r}"
-    )
+    try:
+        label, confidence = predict_message(args.message)
+    except ValueError as error:
+        raise SystemExit(f"Error: {error}") from error
+
+    print(f"label: {label}")
+    print(f"confidence: {confidence:.2%}")
 
 
 if __name__ == "__main__":
